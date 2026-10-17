@@ -24,7 +24,7 @@ cp .env.example .env            # completar DRIVE_FOLDER_ID (opcional: USD_TO_AR
 
 ## Uso: interfaz web
 ```bash
-cd /Users/mirko.perez/Desktop/facu/prices-cellphones && source .venv/bin/activate && pricecomp ui
+cd price-cellphones && source .venv/bin/activate && pricecomp ui
 ```
 Abre `http://127.0.0.1:8000` (solo accesible desde tu equipo). Cerrar con `Ctrl+C`. Opciones: `--port 8001`, `--no-browser`.
 
