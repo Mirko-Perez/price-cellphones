@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.env
+credentials*.json
+client_secret*.json
+token.json
+data/input/*
+data/raw/*
+data/output/*
+!data/*/.gitkeep
