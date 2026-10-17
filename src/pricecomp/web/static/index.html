@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Comparador de precios</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --surface: #fff; --text: #1a1d21; --muted: #5f6672; --border: #e1e4e9;
+    --accent: #1f5fd1; --accent-hover: #184fb0; --accent-soft: #e8f0fd;
+    --ok: #0f7a3d; --ok-bg: #e5f5ec; --warn: #8a5a00; --warn-bg: #fdf1d8;
+    --bad: #b3261e; --bad-bg: #fbe9e7; --info: #1f5fd1; --info-bg: #e8f0fd; --none: #5f6672; --none-bg: #eceef1;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #101215; --surface: #181b20; --text: #e8eaed; --muted: #9aa1ad; --border: #2a2f37;
+      --accent: #6ea0f5; --accent-hover: #8ab4f8; --accent-soft: #1b2740;
+      --ok: #5fd08d; --ok-bg: #12301f; --warn: #f0c36a; --warn-bg: #33270d;
+      --bad: #f2a29c; --bad-bg: #3a1b18; --info: #8ab4f8; --info-bg: #1b2740; --none: #9aa1ad; --none-bg: #23272e;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 1180px; margin: 0 auto; padding: 32px 20px 64px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 24px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+  .card h2 { font-size: 16px; margin: 0 0 12px; }
+  .hidden { display: none !important; }
+
+  .drop { border: 2px dashed var(--border); border-radius: 12px; padding: 40px 20px; text-align: center; cursor: pointer; transition: .15s; }
+  .drop:hover, .drop.over { border-color: var(--accent); background: var(--accent-soft); }
+  .drop strong { display: block; font-size: 16px; margin-bottom: 4px; }
+  .drop span { color: var(--muted); }
+  .file-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .file-row .name { font-weight: 600; }
+  .file-row .meta { color: var(--muted); }
+
+  button, .btn { font: inherit; border: 1px solid var(--border); background: var(--surface); color: var(--text); padding: 8px 16px; border-radius: 8px; cursor: pointer; text-decoration: none; display: inline-block; }
+  button:hover, .btn:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  button.primary:hover { background: var(--accent-hover); }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  button:focus-visible, .drop:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  details summary { cursor: pointer; color: var(--muted); }
+  .settings { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin-top: 12px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+  input[type=number], input[type=search] { width: 100%; font: inherit; padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); }
+  .check { display: flex; align-items: center; gap: 8px; color: var(--text); font-size: 14px; margin: 0; padding-top: 22px; }
+
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 16px; }
+  .progress { height: 8px; background: var(--none-bg); border-radius: 99px; overflow: hidden; margin-top: 10px; }
+  .progress > div { height: 100%; background: var(--accent); width: 0; transition: width .3s; }
+  .notice { padding: 10px 14px; border-radius: 8px; margin-top: 12px; }
+  .notice.error { background: var(--bad-bg); color: var(--bad); }
+  .notice.ok { background: var(--ok-bg); color: var(--ok); }
+  .notice a { color: inherit; font-weight: 600; }
+
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .tile { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+  .tile .n { font-size: 26px; font-weight: 700; line-height: 1.2; }
+  .tile .l { color: var(--muted); font-size: 13px; }
+
+  .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+  .toolbar input[type=search] { max-width: 260px; }
+  .chip { padding: 5px 12px; border-radius: 99px; font-size: 13px; }
+  .chip[aria-pressed=true] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+
+  .table-wrap { overflow: auto; border: 1px solid var(--border); border-radius: 10px; max-height: 70vh; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { padding: 8px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--border); }
+  th:first-child, td:first-child, th.txt, td.txt { text-align: left; }
+  td:first-child { white-space: normal; min-width: 150px; max-width: 220px; }
+  th { position: sticky; top: 0; background: var(--surface); cursor: pointer; font-weight: 600; user-select: none; z-index: 1; }
+  th .arrow { color: var(--accent); }
+  tbody tr:hover { background: var(--accent-soft); }
+  td.muted { color: var(--muted); }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: 12.5px; font-weight: 600; }
+  .b-ok { background: var(--ok-bg); color: var(--ok); } .b-warn { background: var(--warn-bg); color: var(--warn); }
+  .b-bad { background: var(--bad-bg); color: var(--bad); } .b-info { background: var(--info-bg); color: var(--info); } .b-none { background: var(--none-bg); color: var(--none); }
+  .foot { color: var(--muted); font-size: 13px; margin-top: 10px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Comparador de precios de celulares</h1>
+  <p class="sub">Subí la lista del proveedor y compará tu costo contra el mercado.</p>
+
+  <section class="card" id="step-upload">
+    <div class="drop" id="drop" tabindex="0" role="button" aria-label="Subir PDF">
+      <strong>Arrastrá el PDF del proveedor acá</strong>
+      <span>o hacé clic para elegirlo</span>
+      <input type="file" id="file" accept="application/pdf,.pdf" hidden>
+    </div>
+    <div id="upload-error" class="notice error hidden" role="alert"></div>
+  </section>
+
+  <section class="card hidden" id="step-ready">
+    <div class="file-row">
+      <span class="name" id="fname"></span>
+      <span class="meta" id="fmeta"></span>
+      <button id="change" style="margin-left:auto">Cambiar PDF</button>
+    </div>
+    <details style="margin-top:14px">
+      <summary>Ajustes de margen y dólar</summary>
+      <div class="settings">
+        <div><label for="margin">Margen mínimo sobre costo (%)</label><input type="number" id="margin" step="0.5" min="0"></div>
+        <div><label for="undercut">Apuntar por debajo de la mediana (%)</label><input type="number" id="undercut" step="0.5" min="0"></div>
+        <div><label for="fx">Dólar manual (ARS, opcional)</label><input type="number" id="fx" step="1" min="0" placeholder="automático"></div>
+        <label class="check"><input type="checkbox" id="refresh"> Actualizar precios (ignorar caché)</label>
+      </div>
+    </details>
+    <div class="actions">
+      <button class="primary" id="go">Comparar precios</button>
+      <span class="meta" id="sources"></span>
+    </div>
+    <div id="progress-box" class="hidden">
+      <div id="stage" style="margin-top:14px"></div>
+      <div class="progress"><div id="bar"></div></div>
+    </div>
+    <div id="run-error" class="notice error hidden" role="alert"></div>
+  </section>
+
+  <section id="results" class="hidden">
+    <div class="tiles" id="tiles"></div>
+    <div class="card">
+      <div class="actions" style="margin:0 0 16px">
+        <a class="btn" id="dl" href="#">Descargar Excel</a>
+        <button id="drive">Subir a Drive</button>
+        <button id="drive-login" class="hidden">Conectar con Google</button>
+        <span class="meta" id="fxinfo"></span>
+      </div>
+      <div id="drive-msg" class="notice hidden" role="status"></div>
+      <div class="toolbar">
+        <input type="search" id="q" placeholder="Buscar equipo…" aria-label="Buscar equipo">
+        <span id="chips" style="display:flex;gap:6px;flex-wrap:wrap"></span>
+      </div>
+      <div class="table-wrap"><table><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>
+      <div class="foot" id="foot"></div>
+    </div>
+  </section>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const show = (id, on = true) => $(id).classList.toggle('hidden', !on);
+const fmtMoney = v => v == null ? '—' : '$ ' + Math.round(v).toLocaleString('es-AR');
+const fmtUsd = v => 'US$ ' + v.toLocaleString('es-AR', {minimumFractionDigits: 0, maximumFractionDigits: 2});
+const BADGE = {
+  'Competitivo': 'b-ok', 'Barato (margen de sobra)': 'b-info', 'Caro': 'b-bad',
+  'Mercado bajo el margen mínimo': 'b-warn', 'Sin datos de mercado': 'b-none', 'Falta USD_TO_ARS': 'b-bad',
+};
+
+const HIDDEN = new Set(['Mercado promedio', 'Mercado mín', '# ofertas']);  // siguen en el Excel
+const LABEL = {'Costo proveedor': 'Costo', 'Mercado mín': 'Mín. mercado', 'Mercado mediana': 'Mediana', 'Precio sugerido': 'Sugerido', 'personal (mín)': 'Personal', 'movistar (mín)': 'Movistar'};
+let fileId = null, jobId = null, rows = [], columns = [], sortKey = null, sortDir = 1, statusFilter = null;
+
+async function api(url, opts) {
+  const r = await fetch(url, opts);
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.detail || 'Error inesperado');
+  return data;
+}
+function msg(id, text, kind) { const n = $(id); n.textContent = text; n.className = 'notice ' + (kind || '') ; n.classList.toggle('hidden', !text); }
+
+/* ---- subida ---- */
+const drop = $('drop'), input = $('file');
+drop.onclick = () => input.click();
+drop.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click(); } };
+['dragenter', 'dragover'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave', 'drop'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', e => e.dataTransfer.files[0] && upload(e.dataTransfer.files[0]));
+input.onchange = () => input.files[0] && upload(input.files[0]);
+$('change').onclick = () => { show('step-ready', false); show('results', false); show('step-upload'); input.value = ''; };
+
+async function upload(file) {
+  msg('upload-error', '');
+  const fd = new FormData(); fd.append('file', file);
+  drop.querySelector('strong').textContent = 'Leyendo el PDF…';
+  try {
+    const d = await api('/api/upload', {method: 'POST', body: fd});
+    fileId = d.file_id;
+    $('fname').textContent = d.filename;
+    const usd = d.items.filter(i => i.currency === 'USD').length;
+    $('fmeta').textContent = `${d.items.length} celulares detectados` + (usd ? ' · precios en USD' : '');
+    show('step-upload', false); show('step-ready'); show('results', false);
+  } catch (e) { msg('upload-error', e.message, 'error'); }
+  drop.querySelector('strong').textContent = 'Arrastrá el PDF del proveedor acá';
+}
+
+/* ---- comparación ---- */
+$('go').onclick = async () => {
+  msg('run-error', ''); show('results', false);
+  const num = id => $(id).value === '' ? null : parseFloat($(id).value);
+  $('go').disabled = true; show('progress-box'); setProgress('Iniciando…', 0, 1);
+  try {
+    const {job_id} = await api('/api/compare', {method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({file_id: fileId, margin_min: num('margin'), undercut: num('undercut'), usd_to_ars: num('fx'), refresh: $('refresh').checked})});
+    jobId = job_id; await poll();
+  } catch (e) { msg('run-error', e.message, 'error'); }
+  $('go').disabled = false; show('progress-box', false);
+};
+function setProgress(stage, done, total) {
+  $('stage').textContent = total ? `${stage} (${done}/${total})` : stage;
+  $('bar').style.width = total ? Math.max(4, done / total * 100) + '%' : '4%';
+}
+async function poll() {
+  for (;;) {
+    const j = await api('/api/jobs/' + jobId);
+    if (j.status === 'error') throw new Error(j.error);
+    if (j.status === 'done') { render(j); return; }
+    setProgress(j.stage, j.done, j.total);
+    await new Promise(r => setTimeout(r, 800));
+  }
+}
+
+/* ---- resultados ---- */
+function render(j) {
+  columns = j.columns.filter(c => !HIDDEN.has(c)); rows = j.rows; sortKey = null; statusFilter = null; $('q').value = '';
+  const count = s => rows.filter(r => r['Estado'] === s).length;
+  const withData = rows.filter(r => r['# ofertas'] > 0).length;  // usa la columna oculta
+  $('tiles').replaceChildren(...[
+    [rows.length, 'Equipos en la lista'], [withData, 'Con precio de mercado'],
+    [count('Competitivo'), 'Competitivos'], [count('Mercado bajo el margen mínimo'), 'Mercado bajo tu margen mínimo'],
+  ].map(([n, l]) => { const t = el('div', 'tile'); t.append(el('div', 'n', n), el('div', 'l', l)); return t; }));
+  $('dl').href = `/api/jobs/${jobId}/excel`;
+  $('fxinfo').textContent = j.usd_to_ars ? `Dólar usado: $ ${Math.round(j.usd_to_ars).toLocaleString('es-AR')}` : '';
+  msg('drive-msg', j.drive_link ? '' : '');
+  const statuses = [...new Set(rows.map(r => r['Estado']))];
+  $('chips').replaceChildren(...statuses.map(s => {
+    const b = el('button', 'chip', `${s} (${count(s)})`); b.setAttribute('aria-pressed', 'false');
+    b.onclick = () => { statusFilter = statusFilter === s ? null : s; document.querySelectorAll('.chip').forEach(c => c.setAttribute('aria-pressed', String(c === b && statusFilter === s))); draw(); };
+    return b;
+  }));
+  show('results'); draw(); $('results').scrollIntoView({behavior: 'smooth'});
+  refreshDrive();
+}
+function el(tag, cls, text) { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
+function cell(col, v) {
+  if (col === 'Estado') { const td = el('td', 'txt'); td.append(el('span', 'badge ' + (BADGE[v] || 'b-none'), v)); return td; }
+  if (col === 'Equipo') return el('td', 'txt', v);
+  if (col === 'Margen %') return el('td', v == null ? 'muted' : '', v == null ? '—' : (v * 100).toFixed(1) + '%');
+  if (col === '# ofertas') return el('td', '', v);
+  return el('td', v == null ? 'muted' : '', fmtMoney(v));
+}
+function draw() {
+  const q = $('q').value.trim().toLowerCase();
+  let list = rows.filter(r => (!statusFilter || r['Estado'] === statusFilter) && (!q || r['Equipo'].toLowerCase().includes(q)));
+  if (sortKey) list = [...list].sort((a, b) => {
+    const x = a[sortKey], y = b[sortKey];
+    if (x == null) return 1; if (y == null) return -1;
+    return (typeof x === 'string' ? x.localeCompare(y) : x - y) * sortDir;
+  });
+  $('thead').replaceChildren(el('tr')); const tr = $('thead').firstChild;
+  columns.forEach(c => {
+    const th = el('th', c === 'Estado' ? 'txt' : '', LABEL[c] || c); th.tabIndex = 0;
+    if (c === sortKey) th.append(el('span', 'arrow', sortDir > 0 ? ' ▲' : ' ▼'));
+    const sort = () => { sortDir = sortKey === c ? -sortDir : 1; sortKey = c; draw(); };
+    th.onclick = sort; th.onkeydown = e => e.key === 'Enter' && sort();
+    tr.append(th);
+  });
+  $('tbody').replaceChildren(...list.map(r => { const row = el('tr'); columns.forEach(c => row.append(cell(c, r[c]))); return row; }));
+  $('foot').textContent = `${list.length} de ${rows.length} equipos · precios en pesos argentinos`;
+}
+$('q').oninput = draw;
+
+/* ---- Drive ---- */
+async function refreshDrive() {
+  const s = await api('/api/drive/status');
+  show('drive-login', !s.connected && s.has_client_secret);
+  $('drive').disabled = !s.connected;
+  $('drive').title = s.connected ? '' : 'Conectá tu cuenta de Google primero';
+  if (!s.has_client_secret) msg('drive-msg', 'Falta client_secret.json para conectar Google Drive (ver README).', 'error');
+}
+$('drive-login').onclick = async () => {
+  msg('drive-msg', 'Se abrió una ventana de Google para iniciar sesión…');
+  try { await api('/api/drive/login', {method: 'POST'}); msg('drive-msg', 'Cuenta conectada.', 'ok'); refreshDrive(); }
+  catch (e) { msg('drive-msg', e.message, 'error'); }
+};
+$('drive').onclick = async () => {
+  $('drive').disabled = true; msg('drive-msg', 'Subiendo a Drive…');
+  try {
+    const d = await api(`/api/jobs/${jobId}/drive`, {method: 'POST'});
+    const n = $('drive-msg'); n.className = 'notice ok'; n.replaceChildren('Subido a Drive. ');
+    const a = el('a', '', 'Abrir en Drive'); a.href = d.drive_link; a.target = '_blank'; a.rel = 'noopener'; n.append(a);
+  } catch (e) { msg('drive-msg', e.message, 'error'); }
+  $('drive').disabled = false;
+};
+
+/* ---- inicio ---- */
+api('/api/defaults').then(d => {
+  $('margin').value = d.margin_min; $('undercut').value = d.undercut;
+  $('sources').textContent = 'Fuentes: ' + d.sources.join(', ');
+});
+</script>
+</body>
+</html>

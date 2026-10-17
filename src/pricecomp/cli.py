@@ -21,6 +21,19 @@ def parse(pdf: Path, parser: str = "lista_dolares") -> None:
         typer.echo(f"{it.raw_name!r:60} {it.cost:>12,.2f} {it.currency}  -> {it.phone.query}")
 
 
+@app.command()
+def ui(port: int = 8000, no_browser: bool = typer.Option(False, "--no-browser")) -> None:
+    """Abre la interfaz web local (arrastrar el PDF y comparar)."""
+    import threading
+    import webbrowser
+
+    import uvicorn
+
+    if not no_browser:
+        threading.Timer(1.2, webbrowser.open, args=[f"http://127.0.0.1:{port}"]).start()
+    uvicorn.run("pricecomp.web.app:app", host="127.0.0.1", port=port, log_level="warning")
+
+
 @app.command("drive-login")
 def drive_login() -> None:
     """Inicia sesión con tu cuenta de Google (una sola vez) y guarda el token."""
