@@ -1,0 +1,20 @@
+sources:            # fuentes activas (ver scrapers/registry.py)
+  - personal
+  - movistar
+
+pricing:
+  margin_min: 0.08        # margen mínimo sobre costo (8%)
+  undercut: 0.02          # cuánto por debajo de la mediana de mercado apuntar
+  cheap_threshold: 0.10   # precio propio >10% bajo mercado => "barato"
+  expensive_threshold: 0.10
+
+matching:
+  min_score: 80           # umbral rapidfuzz (0-100) título oferta vs equipo
+  max_offers_per_source: 10
+
+scraping:
+  concurrency: 4
+  timeout_s: 20
+  cache_ttl_h: 12
+
+fx_rate_type: blue      # dólar a usar para convertir la lista en USD (blue|oficial|bolsa|contadoconliqui)
