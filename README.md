@@ -20,7 +20,13 @@ cp .env.example .env   # DRIVE_FOLDER_ID, opcional USD_TO_ARS
 3. *Credenciales* → Crear ID de cliente OAuth → **Aplicación de escritorio** → descargar JSON y guardarlo como `client_secret.json` en la raíz.
 4. `pricecomp drive-login` abre el navegador, iniciás sesión y queda `token.json` (ambos en .gitignore).
 
-## Uso
+## Uso (interfaz web)
+```bash
+pricecomp ui        # abre http://127.0.0.1:8000
+```
+Arrastrás el PDF, ajustás margen/dólar si querés, tocás **Comparar precios** y desde los resultados podés **Descargar Excel** o **Subir a Drive** (con botón para conectar Google la primera vez). Solo escucha en tu equipo (127.0.0.1).
+
+## Uso (consola)
 ```bash
 pricecomp parse data/input/lista.pdf                 # validar qué extrae del PDF
 pricecomp run data/input/lista.pdf --no-upload       # genera data/output/comparativa_YYYYMMDD.xlsx
